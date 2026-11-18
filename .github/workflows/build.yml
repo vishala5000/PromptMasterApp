@@ -1,0 +1,67 @@
+
+name: Build & Sign APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew || true
+
+      - name: Build debug APK
+        run: ./gradlew assembleDebug --no-daemon || ./gradlew assembleRelease --no-daemon
+
+      - name: Locate APK
+        id: findapk
+        run: |
+          APK=$(find app/build/outputs/apk -name "*.apk" | head -n 1)
+          if [ -z "$APK" ]; then
+            echo "APK not found, listing:"
+            find app/build/outputs -type f
+            exit 1
+          fi
+          echo "apk=$APK" >> $GITHUB_OUTPUT
+          echo "Found APK: $APK"
+
+      - name: Generate signing keystore (on the fly)
+        run: |
+          keytool -genkeypair -v             -keystore release-key.jks             -keyalg RSA -keysize 2048 -validity 10000             -alias key             -storepass promptmaster             -keypass promptmaster             -dname "CN=PromptMaster, OU=Dev, O=App, L=City, ST=State, C=US"
+
+      - name: Align APK (zipalign)
+        run: |
+          APK="${{ steps.findapk.outputs.apk }}"
+          ALIGNED="app-aligned.apk"
+          $ANDROID_HOME/build-tools/34.0.0/zipalign -f -v 4 "$APK" "$ALIGNED"
+          mv "$ALIGNED" "$APK"
+
+      - name: Sign APK with apksigner
+        run: |
+          APK="${{ steps.findapk.outputs.apk }}"
+          $ANDROID_HOME/build-tools/34.0.0/apksigner sign             --ks release-key.jks             --ks-key-alias key             --ks-pass pass:promptmaster             --key-pass pass:promptmaster             "$APK"
+          $ANDROID_HOME/build-tools/34.0.0/apksigner verify --verbose "$APK"
+
+      - name: Rename final APK
+        run: |
+          APK="${{ steps.findapk.outputs.apk }}"
+          cp "$APK" PromptMaster-signed.apk
+
+      - name: Upload signed APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: PromptMaster-signed-apk
+          path: PromptMaster-signed.apk
+          if-no-files-found: error
