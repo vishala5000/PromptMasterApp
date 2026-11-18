@@ -388,7 +388,7 @@ fun CategoryScreen(
     fun copy(label: String, text: String) {
         val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         cm.setPrimaryClip(ClipData.newPlainText(label, text.trim()))
-        haptic.performHapticFeedback(HapticFeedbackType.Confirm)
+        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
         Toast.makeText(ctx, "$label copied ✅", Toast.LENGTH_SHORT).show()
         CoroutineScope(Dispatchers.IO).launch {
             db.savePrompt(PromptDatabase.Prompt(text = text.trim(), category = title))
@@ -724,7 +724,7 @@ fun PromptCard(prompt: PromptDatabase.Prompt, db: PromptDatabase, ctx: Context, 
                 SmallButton("COPY") {
                     val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                     cm.setPrimaryClip(ClipData.newPlainText("Prompt", prompt.text))
-                    haptic.performHapticFeedback(HapticFeedbackType.Confirm)
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     Toast.makeText(ctx, "Copied ✅", Toast.LENGTH_SHORT).show()
                 }
                 SmallButton("SHARE") {
