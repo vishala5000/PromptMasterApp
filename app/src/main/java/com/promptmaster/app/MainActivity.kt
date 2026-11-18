@@ -38,7 +38,6 @@ private val White    = Color(0xFFFFFFFF)
 @Composable
 fun SquareBackground(content: @Composable () -> Unit) {
     Box(modifier = Modifier.fillMaxSize().background(Black)) {
-        // Static grid (no animation)
         Canvas(modifier = Modifier.fillMaxSize()) {
             val step = 80f
             val stroke = Stroke(width = 1.2f)
@@ -52,7 +51,6 @@ fun SquareBackground(content: @Composable () -> Unit) {
                 y += step
             }
         }
-        // Static radial glow
         Box(modifier = Modifier.fillMaxSize().background(
             Brush.radialGradient(colors = listOf(Red.copy(alpha = 0.25f), Color.Transparent), radius = 900f)
         ))
@@ -94,11 +92,60 @@ fun HomeScreen(nav: androidx.navigation.NavController) {
 @Composable
 fun CategoryScreen(title: String, promptText: String, titleText: String) {
     val ctx = LocalContext.current
+    var showCustomDialog by remember { mutableStateOf(false) }
+    var customWord by remember { mutableStateOf("") }
 
     fun copy(label: String, text: String) {
         val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         cm.setPrimaryClip(ClipData.newPlainText(label, text.trim()))
         Toast.makeText(ctx, "$label copied ✅", Toast.LENGTH_SHORT).show()
+    }
+
+    if (showCustomDialog) {
+        AlertDialog(
+            onDismissRequest = { showCustomDialog = false },
+            title = { Text("Enter Custom Word", color = White, fontWeight = FontWeight.Bold) },
+            text = {
+                OutlinedTextField(
+                    value = customWord,
+                    onValueChange = { customWord = it },
+                    label = { Text("e.g., CYBORG, DOG, WARRIOR", color = White.copy(0.7f)) },
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = White,
+                        unfocusedTextColor = White,
+                        cursorColor = RedLight,
+                        focusedBorderColor = Red,
+                        unfocusedBorderColor = Red.copy(0.5f)
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (customWord.isNotBlank()) {
+                        val finalPrompt = CUSTOM_PROMPT_TEMPLATE.replace("[word]", customWord.trim().uppercase())
+                        copy("Custom Prompt", finalPrompt)
+                        showCustomDialog = false
+                        customWord = ""
+                    } else {
+                        Toast.makeText(ctx, "Please enter a word", Toast.LENGTH_SHORT).show()
+                    }
+                }) {
+                    Text("Generate & Copy", color = RedLight, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { 
+                    showCustomDialog = false
+                    customWord = ""
+                }) {
+                    Text("Cancel", color = White.copy(0.7f))
+                }
+            },
+            containerColor = Black,
+            shape = RoundedCornerShape(16.dp)
+        )
     }
 
     SquareBackground {
@@ -108,6 +155,7 @@ fun CategoryScreen(title: String, promptText: String, titleText: String) {
             Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
                 NeonButton("$title PROMPT") { copy("Prompt", promptText) }
                 NeonButton("TITLE PROMPT") { copy("Title", titleText) }
+                NeonButton("⚡ CUSTOM PROMPT") { showCustomDialog = true }
             }
         }
     }
@@ -117,6 +165,7 @@ const val MAN_PROMPT = "CREATE MAN PHOTO EDITING PROMPT UNDER 400 CHARACTERS, UN
 const val WOMEN_PROMPT = "CREATE GIRL PHOTO EDITING PROMPT UNDER 400 CHARACTERS, UNIQUE OUTFIT, UNIQUE BACKGROUND, UNIQUE STYLE, UNIQUE POSE, UNIQUE SETTING, UNIQUE EFFECT, FACE 100% LOCKED, HYPER REALISTIC, 8K, PHOTOREALISTIC, NEVER REPEAT, COMPLETELY UNQIUE, BEAUTIFUL, PERFECT MAKEUP, MASTERPIECE, 9:16"
 const val COUPLES_PROMPT = "CREATE COUPLES PHOTO EDITING PROMPT UNDER 400 CHARACTERS, UNIQUE OUTFIT, UNIQUE BACKGROUND, UNIQUE STYLE, UNIQUE POSE, UNIQUE SETTING, UNIQUE EFFECT, FACE 100% LOCKED, HYPER REALISTIC, 8K, PHOTOREALISTIC, NEVER REPEAT, COMPLETELY UNQIUE, MASTERPIECE, 9:16"
 const val TITLE_PROMPT = "CREATE 1 MOST ENGAGING HIGH CTR TITLE UNDER 80 CHARACTERS FOR YOUTUBE SHORTS VIDEO INCLUDING 3 HASHTAGS AND SOME IMOJIES, NEVER REPEAT, COMPLETELY UNIQUE, 2 SEARCHABLE KEYWORD IN THIS ONE TITLE,"
+const val CUSTOM_PROMPT_TEMPLATE = "CREATE [word] PHOTO EDITING PROMPT UNDER 400 CHARACTERS, UNIQUE OUTFIT, UNIQUE BACKGROUND, UNIQUE STYLE, UNIQUE POSE, UNIQUE SETTING, UNIQUE EFFECT, FACE 100% LOCKED, HYPER REALISTIC, 8K, PHOTOREALISTIC, NEVER REPEAT, COMPLETELY UNQIUE, MASTERPIECE, 9:16"
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
