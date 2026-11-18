@@ -2,7 +2,6 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    id("com.google.devtools.ksp") version "1.9.22-1.0.17" apply false
 }
 
 android {
@@ -13,8 +12,8 @@ android {
         applicationId = "com.promptmaster.app"
         minSdk = 24
         targetSdk = 34
-        versionCode = 2
-        versionName = "2.0"
+        versionCode = 3
+        versionName = "3.0"
     }
 
     buildTypes {
@@ -42,12 +41,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.navigation:navigation-compose:2.7.7")
-    
-    // Room Database (FREE, OFFLINE)
-    implementation("androidx.room:room-runtime:2.6.1")
-    implementation("androidx.room:room-ktx:2.6.1")
-    
-    // DataStore for preferences (FREE, OFFLINE)
-    implementation("androidx.datastore:datastore-preferences:1.0.0")
+    implementation("androidx.hapticfeedback:hapticfeedback:1.0.0")
 }
